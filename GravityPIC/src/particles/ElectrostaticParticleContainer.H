@@ -58,7 +58,7 @@ public:
             pp.query("mass", mass); 
         }
 
-    void InitParticles (int n_part);
+    void InitParticles (const std::string& filename);
 
     void pushX (const amrex::Real& dt);
 

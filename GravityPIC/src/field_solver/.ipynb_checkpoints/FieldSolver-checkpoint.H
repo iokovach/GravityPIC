@@ -24,7 +24,7 @@ namespace FieldSolver {
                      amrex::Vector<amrex::BoxArray>& grids,
                      amrex::Vector<amrex::DistributionMapping>& dm,
                      amrex::Vector<amrex::Geometry>& geom,
-                     const amrex::Vector<const amrex::iMultiFab*>& masks);
+                     const amrex::Vector<const amrex::iMultiFab*>& masks, int bc);
 
     void computeE (const amrex::Vector<std::array<amrex::MultiFab*, AMREX_SPACEDIM> >& E,
                    const amrex::Vector<const amrex::MultiFab*>& phi,

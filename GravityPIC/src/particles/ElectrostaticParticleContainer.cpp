@@ -9,63 +9,60 @@
 
 using namespace amrex;
 
-// initialize particle structures
-void ElectrostaticParticleContainer::InitParticles (int n_part) {
-
-    // Only rank 0 (the "IO processor") creates the initial particle(s)
-    // one MPI process runs this code, every process still needs
-    // to eventually know about the particles -- that's what Redistribute()
-    // at the bottom does: it moves/broadcasts particles to whichever
-    // process actually owns the grid box the particle lives in.
+// function to read in ics from file
+void ElectrostaticParticleContainer::InitParticles (const std::string& filename) {
+ 
+    // Only rank 0 reads the file and creates particles; Redistribute() below
+    // takes care of getting every particle to the rank/grid box that owns it.
     if ( ParallelDescriptor::MyProc() == ParallelDescriptor::IOProcessorNumber() ) {
-        
-        std::mt19937 gen(12345);
-
-        //get box bounds to initialize particles within box
-        const auto& geom = m_gdb->Geom(0);
-        const auto plo = geom.ProbLoArray();
-        const auto phi = geom.ProbHiArray();
-
-        std::uniform_real_distribution<ParticleReal> dist_x(plo[0], phi[0]);
-        std::uniform_real_distribution<ParticleReal> dist_y(plo[1], phi[1]);
-        std::uniform_real_distribution<ParticleReal> dist_z(plo[2], phi[2]);
-        
-        for (int i = 0; i < n_part; ++i) {
+ 
+        std::ifstream ifs(filename);
+        if ( !ifs.is_open() ) {
+            amrex::Abort("InitParticles: could not open initial conditions file: " + filename);
+        }
+ 
+        Long n_part;
+        ifs >> n_part;
+        if ( ifs.fail() || n_part < 0 ) {
+            amrex::Abort("InitParticles: could not read particle count from " + filename);
+        }
+ 
+        for (Long i = 0; i < n_part; ++i) {
+            ParticleReal x, y, z, vx, vy, vz, w;
+            // read in pos, vel from ic file
+            ifs >> x >> y >> z >> vx >> vy >> vz >> w;
+            if ( ifs.fail() ) {
+                amrex::Abort("InitParticles: file " + filename +
+                              " ended early or is malformed (expected " +
+                              std::to_string(n_part) + " particles, failed at line " +
+                              std::to_string(i+2) + ")");
+            }
+ 
             ParticleType p;
-    
-            // Every particle gets a globally unique ID and records which CPU/rank made it
             p.id()   = ParticleType::NextID();
             p.cpu()  = ParallelDescriptor::MyProc();
-    
-            // Set the particle's initial physical position (x, y, z).
-            p.pos(0) = dist_x(gen);
-            p.pos(1) = dist_y(gen);
-            p.pos(2) = dist_z(gen);
-    
-            // "attribs" holds the particle's non-positional data: weight, velocity, and field values at the particle's location
-            // PIdx is an enumeration -- gives names to a sequence of numbers 
-            // note that velocities are stored as attributes and positions live in the particletype structure
-            // this has something to do with optimizing the code for massively parallel runs....idk
+ 
+            p.pos(0) = x;
+            p.pos(1) = y;
+            p.pos(2) = z;
+ 
             std::array<ParticleReal,PIdx::nattribs> attribs;
-            attribs[PIdx::w]  = 1.0;
-            attribs[PIdx::vx] = 0.0;
-            attribs[PIdx::vy] = 0.0;
-            attribs[PIdx::vz] = 0.0;
+            attribs[PIdx::w]  = w;
+            attribs[PIdx::vx] = vx;
+            attribs[PIdx::vy] = vy;
+            attribs[PIdx::vz] = vz;
             attribs[PIdx::Ex] = 0.0;
             attribs[PIdx::Ey] = 0.0;
             attribs[PIdx::Ez] = 0.0;
-    
-            // Add to level 0, grid 0, and tile 0
+ 
             std::pair<int,int> key {0,0};
             auto& particle_tile = GetParticles(0)[key];
-    
+ 
             particle_tile.push_back(p);
             particle_tile.push_back_real(attribs);
         }
-
     }
-    // Redistribute() moves each particle to whichever 
-    // MPI rank and grid box it should be in based on position
+ 
     Redistribute();
 }
 

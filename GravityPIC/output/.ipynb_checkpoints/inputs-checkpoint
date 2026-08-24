@@ -1,0 +1,14 @@
+max_level = 1
+n_cell = 32
+n_buffer = 2
+max_grid_size = 64
+# mass is defined as mass_weight in IC file
+n_part = 1000
+max_step = 100
+boxsize = 4
+dt = 1.0e-1
+plot_int = 10
+ic_file = sphere1000_ics_M2.txt
+# 0 = dirchlet 0 
+# 1 = periodic
+boundary_condition = 0

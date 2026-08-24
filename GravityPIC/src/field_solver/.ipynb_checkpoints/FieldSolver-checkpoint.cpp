@@ -30,13 +30,62 @@ void fixRHSForSolve (const Vector<MultiFab*>& rhs,
     }
 }
 
+
+// function to make ghost cells at boundary = 0
+void zeroDirichletGhosts (MultiFab& phi, const Geometry& geom)
+{
+    const Box domain = surroundingNodes(geom.Domain());
+
+    for (MFIter mfi(phi); mfi.isValid(); ++mfi) {
+        const Box& valid = mfi.validbox();
+        const Box& grown = mfi.growntilebox();
+
+        auto arr = phi[mfi].array();
+
+        // Zero ghost cells outside the physical nodal domain.
+        for (int dir = 0; dir < AMREX_SPACEDIM; ++dir) {
+
+            // Low side
+            if (grown.smallEnd(dir) < domain.smallEnd(dir)) {
+                Box b = grown;
+                b.setBig(dir, domain.smallEnd(dir) - 1);
+
+                if (!b.isEmpty()) {
+                    amrex::ParallelFor(
+                        b,
+                        [=] AMREX_GPU_DEVICE (int i, int j, int k) noexcept {
+                            arr(i,j,k,0) = 0.0;
+                        });
+                }
+            }
+
+            // High side
+            if (grown.bigEnd(dir) > domain.bigEnd(dir)) {
+                Box b = grown;
+                b.setSmall(dir, domain.bigEnd(dir) + 1);
+
+                if (!b.isEmpty()) {
+                    amrex::ParallelFor(
+                        b,
+                        [=] AMREX_GPU_DEVICE (int i, int j, int k) noexcept {
+                            arr(i,j,k,0) = 0.0;
+                        });
+                }
+            }
+        }
+    }
+}
+
+
+
+
 // Multi-level AMR Poisson solve
 void computePhi (const Vector<const MultiFab*>& rhs,
                  const Vector<MultiFab*>& phi,
                  Vector<BoxArray>& grids,
                  Vector<DistributionMapping>& dm,
                  Vector<Geometry>& geom,
-                 const Vector<const iMultiFab*>& masks) {
+                 const Vector<const iMultiFab*>& masks, int bc) {
 
     int num_levels = rhs.size();
 
@@ -48,7 +97,7 @@ void computePhi (const Vector<const MultiFab*>& rhs,
     }
 
     IntVect ratio(AMREX_D_DECL(2, 2, 2));
-    fixRHSForSolve(GetVecOfPtrs(tmp_rhs), masks, geom, ratio);
+    //fixRHSForSolve(GetVecOfPtrs(tmp_rhs), masks, geom, ratio);
 
     int verbose = 2;
     // may need to toggle this or toggle number of iterations to reach tol
@@ -60,8 +109,37 @@ void computePhi (const Vector<const MultiFab*>& rhs,
     Vector<DistributionMapping> level_dm(1);
     Vector<MultiFab*>           level_phi(1);
     Vector<const MultiFab*>     level_rhs(1);
+    
+    // zero boundary for level 0 grid
+    if (bc == 0) {
+    zeroDirichletGhosts(*phi[0], geom[0]);
+    }
+    
+    const Box domain = surroundingNodes(geom[0].Domain());
+
+    for (MFIter mfi(*phi[0]); mfi.isValid(); ++mfi) {
+        auto const arr = (*phi[0])[mfi].const_array();
+    
+        int i_lo = domain.smallEnd(0);
+        int i_hi = domain.bigEnd(0);
+    
+        int j = domain.smallEnd(1);
+        int k = domain.smallEnd(2);
+    
+        Print() << "phi ghost xlo = "
+                << arr(i_lo-1,j,k,0) << "\n";
+    
+        Print() << "phi xhi boundary = "
+                << arr(i_hi,j,k,0) << "\n";
+        
+        Print() << "phi xhi ghost = "
+                    << arr(i_hi+1,j,k,0) << "\n";
+    }
 
     for (int lev = 0; lev < num_levels; ++lev) {
+    
+        const Box domain = surroundingNodes(geom[lev].Domain());
+        
         level_phi[0]   = phi[lev];
         level_rhs[0]   = tmp_rhs[lev].get();
         level_geom[0]  = geom[lev];
@@ -72,13 +150,26 @@ void computePhi (const Vector<const MultiFab*>& rhs,
         MLNodeLaplacian linop(level_geom, level_grids, level_dm);
 
         // Periodic boundary conditions on every domain face
-        linop.setDomainBC({AMREX_D_DECL(LinOpBCType::Periodic,
-                                        LinOpBCType::Periodic,
-                                        LinOpBCType::Periodic)},
-            {AMREX_D_DECL(LinOpBCType::Periodic,
-                          LinOpBCType::Periodic,
-                          LinOpBCType::Periodic)});
 
+        if (bc != 0)
+        {
+            linop.setDomainBC({AMREX_D_DECL(LinOpBCType::Periodic,
+                                            LinOpBCType::Periodic,
+                                            LinOpBCType::Periodic)},
+                {AMREX_D_DECL(LinOpBCType::Periodic,
+                              LinOpBCType::Periodic,
+                              LinOpBCType::Periodic)});
+        }
+        else
+        {
+            linop.setDomainBC({AMREX_D_DECL(LinOpBCType::Dirichlet,
+                                            LinOpBCType::Dirichlet,
+                                            LinOpBCType::Dirichlet)},
+                {AMREX_D_DECL(LinOpBCType::Dirichlet,
+                              LinOpBCType::Dirichlet,
+                              LinOpBCType::Dirichlet)});
+        }
+    
         linop.setLevelBC(0, nullptr);
 
         // sigma is the coefficient in the more general operator
@@ -109,10 +200,10 @@ void computePhi (const Vector<const MultiFab*>& rhs,
             // Interpolate this (coarser) level's just-solved phi onto the
             // next-finer level, to seed/constrain its boundary values before
             // that level is solved in the next loop iteration.
-            amrex::InterpFromCoarseLevel(*phi[lev+1], 0.0, *phi[lev],
-                                         0, 0, 1, geom[lev], geom[lev+1],
-                                         cphysbc, 0, fphysbc, 0,
-                                         IntVect(AMREX_D_DECL(2, 2, 2)), &mapper, bcs, 0);
+           //amrex::InterpFromCoarseLevel(*phi[lev+1], 0.0, *phi[lev],
+           //                             0, 0, 1, geom[lev], geom[lev+1],
+           //                             cphysbc, 0, fphysbc, 0,
+           //                             IntVect(AMREX_D_DECL(2, 2, 2)), &mapper, bcs, 0);
         }
     }
 
@@ -209,7 +300,7 @@ Vector<std::unique_ptr<iMultiFab> > getLevelMasks
     }
 
     return masks;
-}
+}            
 
 // Computes the field E = -grad(phi) at mesh nodes from the solved potential
 //(the actual gradient stencil is in compute_E_nodal, in FieldSolver_K.H)
@@ -222,6 +313,7 @@ void computeE (const Vector<std::array<MultiFab*, AMREX_SPACEDIM> >& E,
     for (int lev = 0; lev < num_levels; ++lev) {
         const auto& gm = geom[lev];
         const auto dx = gm.CellSizeArray();
+    
         for (MFIter mfi(*phi[lev]); mfi.isValid(); ++mfi) {
             Box bx = mfi.validbox();
             bx.grow(1);

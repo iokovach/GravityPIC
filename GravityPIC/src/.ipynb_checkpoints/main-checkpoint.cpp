@@ -25,8 +25,9 @@ int main (int argc, char* argv[])
 void run_espic ()
 {
     // required inputs parameters
-    int max_level, n_cell, max_grid_size, n_buffer, max_step, n_part, boxsize;
+    int max_level, n_cell, max_grid_size, n_buffer, max_step, n_part, boxsize, bc;
     Real dt;
+    std::string ic_file;  // if set, particles are read from this file instead of random init
 
     // optional
     int plot_int = -1;
@@ -41,6 +42,9 @@ void run_espic ()
         pp.get("max_step", max_step);
         pp.get("dt", dt);
         pp.get("boxsize", boxsize);
+        pp.get("ic_file", ic_file);
+        pp.get("boundary_condition", bc);
+        //pp.get("mass" mass);
 
         pp.query("plot_int", plot_int);
         pp.query("particle_output_int", particle_output_int);
@@ -61,12 +65,22 @@ void run_espic ()
         real_box.setLo(n, 0.0);
         real_box.setHi(n, boxsize);
     }
-
-    // This sets the boundary conditions to be doubly or triply periodic
+    
     int is_periodic[AMREX_SPACEDIM];
+    
+    // This sets the boundary conditions to be doubly or triply periodic
+    if (bc != 0)
+    {
     for (int i = 0; i < AMREX_SPACEDIM; i++) {
         is_periodic[i] = 1;
     }
+    }
+    else 
+    {
+    for (int i = 0; i < AMREX_SPACEDIM; i++) {
+        is_periodic[i] = 0;
+    }
+    }    
 
     IntVect dom_lo(IntVect(AMREX_D_DECL(0,0,0)));
     IntVect dom_hi(IntVect(AMREX_D_DECL(n_cell-1, n_cell-1, n_cell-1)));
@@ -128,7 +142,7 @@ void run_espic ()
 
     // define and initialize particles
     ElectrostaticParticleContainer myPC(geom, dm, grids, rr);
-    myPC.InitParticles(n_part);
+    myPC.InitParticles(ic_file);
 
     // main PIC loop
     for (int step = 0; step <= max_step; ++step) {
@@ -137,7 +151,7 @@ void run_espic ()
 
         FieldSolver::computePhi(GetVecOfConstPtrs(rhs), GetVecOfPtrs(phi),
                                 grids, dm, geom,
-                                GetVecOfConstPtrs(masks));
+                                GetVecOfConstPtrs(masks), bc);
 
         FieldSolver::computeE(GetVecOfArrOfPtrs(eField), GetVecOfConstPtrs(phi), geom);
 
