@@ -1,0 +1,42 @@
+ESPIC_DIR  ?= .
+
+TOP := $(ESPIC_DIR)
+
+DEFINES += -DAMREX_PARTICLES
+
+EBASE := main
+
+USE_FFT = TRUE
+include $(AMREX_HOME)/Tools/GNUMake/Make.defs
+
+FFTW_DIR := /u/iok2/opt/fftw-3.3.10
+
+INCLUDE_LOCATIONS += $(FFTW_DIR)/include
+LIBRARY_LOCATIONS += $(FFTW_DIR)/lib
+LIBRARIES += -lfftw3 -lfftw3f
+
+include $(TOP)/src/Make.package
+INCLUDE_LOCATIONS += $(TOP)/src
+VPATH_LOCATIONS   += $(TOP)/src
+
+include $(TOP)/src/diagnostics/Make.package
+INCLUDE_LOCATIONS += $(TOP)/src/diagnostics
+VPATH_LOCATIONS   += $(TOP)/src/diagnostics
+
+include $(TOP)/src/field_solver/Make.package
+INCLUDE_LOCATIONS += $(TOP)/src/field_solver
+VPATH_LOCATIONS   += $(TOP)/src/field_solver
+
+include $(TOP)/src/particles/Make.package
+INCLUDE_LOCATIONS += $(TOP)/src/particles
+VPATH_LOCATIONS   += $(TOP)/src/particles
+
+Pdirs             := Base Boundary Particle AmrCore LinearSolvers/MLMG
+Ppack             += $(foreach dir, $(Pdirs), $(AMREX_HOME)/Src/$(dir)/Make.package)
+
+include $(Ppack)
+
+all: $(executable)
+	@echo SUCCESS
+
+include $(AMREX_HOME)/Tools/GNUMake/Make.rules
