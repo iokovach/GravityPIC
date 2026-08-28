@@ -9,8 +9,8 @@ IntType = np.int32
 
 R = 1
 N = 1000
-Mtot = 2
-out_file = "output/sphere1000_ics_M2.txt"
+Mtot = 1
+out_file = "output/sphere1000_ics.txt"
 
 #position of center of box
 centerx = 2

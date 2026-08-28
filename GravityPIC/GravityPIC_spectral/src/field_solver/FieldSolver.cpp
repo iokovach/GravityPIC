@@ -53,9 +53,9 @@ void average_cellcenter_to_node (MultiFab& nd, const MultiFab& cc)
 // Multi-level AMR Poisson solve
 void computePhi (const Vector<const MultiFab*>& rhs,
                  const Vector<MultiFab*>& phi,
-                 Vector<BoxArray>& grids,
-                 Vector<DistributionMapping>& dm,
-                 Vector<Geometry>& geom,
+                 const Vector<BoxArray>& grids,
+                 const Vector<DistributionMapping>& dm,
+                 const Vector<Geometry>& geom,
                  const Vector<const iMultiFab*>& masks, int bc) {
 
     int num_levels = rhs.size();

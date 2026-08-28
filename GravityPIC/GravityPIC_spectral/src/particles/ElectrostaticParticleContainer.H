@@ -50,7 +50,7 @@ public:
     ElectrostaticParticleContainer (const amrex::Vector<amrex::Geometry>            & geom,
                                     const amrex::Vector<amrex::DistributionMapping> & dmap,
                                     const amrex::Vector<amrex::BoxArray>            & ba,
-                                    const amrex::Vector<int>                        & rr)
+                                    const amrex::Vector<amrex::IntVect>             & rr)
     : amrex::ParticleContainer<0, 0, PIdx::nattribs> (geom, dmap, ba, rr)
         {
             amrex::ParmParse pp("particles");

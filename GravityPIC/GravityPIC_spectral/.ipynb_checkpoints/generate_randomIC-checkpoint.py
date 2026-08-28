@@ -16,7 +16,7 @@ hi = np.array([1.0, 1.0, 1.0])
 
 mass_weight = 1.0  # per-particle weight (w column)
 
-out_file = "random1000_ics.txt"
+out_file = "output/random1000_ics.txt"
 # ---------------------------------------------------------------------------
 
 rng = np.random.default_rng(seed)

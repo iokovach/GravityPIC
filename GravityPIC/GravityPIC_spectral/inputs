@@ -1,0 +1,25 @@
+n_buffer = 2
+n_part = 1000
+mass = 1e-3
+max_step = 100
+boxsize = 1
+
+dt = 1.0e-1
+plot_int = 10
+ic_file = sphere1000_ics.txt
+
+rho_err = 1000
+
+amr.max_level = 1
+amr.n_cell = 128 128 128
+amr.max_grid_size = 32
+amr.ref_ratio = 2 2
+
+# 1 = periodic 
+# 0 = aperiodic 
+geometry.coord_sys = 0
+geometry.is_periodic = 0 0 0
+
+#boxsize = 1 here
+geometry.prob_lo = 0 0 0
+geometry.prob_hi = 4 4 4
