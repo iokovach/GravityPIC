@@ -165,6 +165,10 @@ tmp_build_dir/o/3d.gnu.EXE/FieldIO.o: src/diagnostics/FieldIO.cpp \
  /projects/illinois/eng/physics/sheltonj/amrex/Src/Particle/AMReX_ParticleIO.H \
  /projects/illinois/eng/physics/sheltonj/amrex/Src/Particle/AMReX_ParticleHeader.H \
  /projects/illinois/eng/physics/sheltonj/amrex/Src/Particle/AMReX_WriteBinaryParticleData.H \
+ /projects/illinois/eng/physics/sheltonj/amrex/Src/AmrCore/AMReX_AmrCore.H \
+ /projects/illinois/eng/physics/sheltonj/amrex/Src/AmrCore/AMReX_AmrMesh.H \
+ /projects/illinois/eng/physics/sheltonj/amrex/Src/AmrCore/AMReX_TagBox.H \
+ /projects/illinois/eng/physics/sheltonj/amrex/Src/AmrCore/AMReX_AmrParGDB.H \
  src/PhysConst.H \
  /projects/illinois/eng/physics/sheltonj/amrex/Src/Boundary/AMReX_InterpBndryData.H \
  /projects/illinois/eng/physics/sheltonj/amrex/Src/Base/AMReX_BCRec.H \
@@ -348,6 +352,10 @@ tmp_build_dir/s/3d.gnu.EXE/AMReX_Config.H:
 /projects/illinois/eng/physics/sheltonj/amrex/Src/Particle/AMReX_ParticleIO.H:
 /projects/illinois/eng/physics/sheltonj/amrex/Src/Particle/AMReX_ParticleHeader.H:
 /projects/illinois/eng/physics/sheltonj/amrex/Src/Particle/AMReX_WriteBinaryParticleData.H:
+/projects/illinois/eng/physics/sheltonj/amrex/Src/AmrCore/AMReX_AmrCore.H:
+/projects/illinois/eng/physics/sheltonj/amrex/Src/AmrCore/AMReX_AmrMesh.H:
+/projects/illinois/eng/physics/sheltonj/amrex/Src/AmrCore/AMReX_TagBox.H:
+/projects/illinois/eng/physics/sheltonj/amrex/Src/AmrCore/AMReX_AmrParGDB.H:
 src/PhysConst.H:
 /projects/illinois/eng/physics/sheltonj/amrex/Src/Boundary/AMReX_InterpBndryData.H:
 /projects/illinois/eng/physics/sheltonj/amrex/Src/Base/AMReX_BCRec.H:

@@ -74,9 +74,10 @@ private:
     amrex::Real rho_err = 1.0;
 
     // define all global variables
+    int max_level;
+    int regrid_int = -1;    
     int n_buffer;
     int max_step;
-    int boxsize;
     int bc;
     int plot_int = -1;
     int particle_output_int = -1;

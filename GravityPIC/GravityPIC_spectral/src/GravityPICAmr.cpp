@@ -10,9 +10,10 @@ GravityPICAmr::GravityPICAmr()
     amrex::ParmParse pp;
     amrex::Array<int, AMREX_SPACEDIM> pdc;
     
+    pp.query("max_level", max_level);
     pp.query("rho_err", rho_err);
+    pp.query("regrid_int", regrid_int);
     pp.get("n_buffer", n_buffer);
-    pp.get("boxsize", boxsize);
     pp.get("max_step", max_step);
     pp.get("dt", dt);
     pp.get("ic_file", ic_file);
@@ -22,6 +23,7 @@ GravityPICAmr::GravityPICAmr()
     pp.query("particle_output_int", particle_output_int);
 
     bc = pdc[0];
+
 }
 
 // function to build boxarrays and particles
@@ -34,16 +36,14 @@ GravityPICAmr::InitData()
     // mask out coarse and fine regions for field gathering later
     RebuildMasks();
 
-    // Construct particle container using the objects we just initialized
-    myPC = std::make_unique<ElectrostaticParticleContainer>(
-        Geom(),
-        DistributionMap(),
-        boxArray(),
-        refRatio()
-    );
-
+    // link PC to GravityPICAmr object
+    myPC = std::make_unique<ElectrostaticParticleContainer>(this);
+    
     // read particle data and put them in the container
     myPC->InitParticles(ic_file);
+    
+    amrex::Print() << "InitData: loaded " << myPC->TotalNumberOfParticles()
+                   << " particles\n";
 }
 
 void GravityPICAmr::RebuildMasks()
@@ -72,8 +72,11 @@ void GravityPICAmr::RebuildMasks()
 void
 GravityPICAmr::Evolve()
 {
+    amrex::Real time = 0.0;
+    
     // main PIC loop
     for (int step = 0; step <= max_step; ++step) {
+
 
         myPC->DepositCharge(GetVecOfPtrs(rhs));
         
@@ -82,7 +85,13 @@ GravityPICAmr::Evolve()
         // so it does not overcount nodes lying between mpi ranks or at periodic bdy
         amrex::Real mean_rho = rhs[0]->sum_unique(0, false, geom[0].periodicity()) / geom[0].Domain().numPts();  
         
-        rhs[0]->plus(-mean_rho, 0, 1);
+        //rhs[0]->plus(-mean_rho, 0, 1);
+
+        for (int lev = 0; lev <= finest_level; ++lev) {
+            amrex::Real max_rho = rhs[lev]->norm0(0);
+            amrex::Print() << "  [step " << step << "] max |rho| at level "
+                           << lev << " = " << max_rho << "\n";
+        }
 
         FieldSolver::computePhi(GetVecOfConstPtrs(rhs), GetVecOfPtrs(phi),
                                 boxArray(), DistributionMap(), Geom(),
@@ -102,9 +111,18 @@ GravityPICAmr::Evolve()
         }
 
         myPC->Evolve(GetVecOfArrOfConstPtrs(eField), GetVecOfConstPtrs(rhs), dt);
+
+        // regrid after evolving and before calling redistribute
+        if (max_level > 0 && regrid_int > 0 && step > 0 && step % regrid_int == 0)
+        {
+            regrid(0, time);
+            RebuildMasks();
+        }
         
-        // periodic BCs are default in Redistribute
+        // Redistribute correctly places particles on new grid
         myPC->Redistribute();
+
+        time += dt;
     }
 }
 
@@ -117,19 +135,43 @@ GravityPICAmr::ErrorEst (int lev, amrex::TagBoxArray& tags,
                    << ", time = " << time << "\n";
 
     const amrex::MultiFab& rho = *rhs[lev];
- 
+    // Create cell-centered MultiFab
+    //amrex::BoxArray cc_ba = rho.boxArray();
+    //cc_ba.convert(amrex::IndexType::TheCellType());
+
+    //amrex::MultiFab rho_cc(cc_ba, rho.DistributionMap(), 1, 0);
+    
+    //amrex::average_node_to_cellcenter(rho_cc, 0, rho, 0, 1);
+
+    //amrex::Print() << "rho_err = " << rho_err << "\n";
+    //amrex::Print() << "max |rho_cc| = " << rho_cc.norm0(0) << "\n";
+
     for (amrex::MFIter mfi(rho, amrex::TilingIfNotGPU()); mfi.isValid(); ++mfi) {
-        const amrex::Box& bx = mfi.tilebox();
+        amrex::Box bx = mfi.tilebox();
+        bx.enclosedCells();
+        
         const auto& rho_arr = rho.const_array(mfi);
         auto tag_arr = tags.array(mfi);
         const amrex::Real threshold = rho_err;
  
         amrex::ParallelFor(bx,
         [=] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
-        {
+        {   
+            const amrex::Real rho_cc =
+                    0.125 * (
+                        rho_arr(i  , j  , k  ) +
+                        rho_arr(i+1, j  , k  ) +
+                        rho_arr(i  , j+1, k  ) +
+                        rho_arr(i+1, j+1, k  ) +
+                        rho_arr(i  , j  , k+1) +
+                        rho_arr(i+1, j  , k+1) +
+                        rho_arr(i  , j+1, k+1) +
+                        rho_arr(i+1, j+1, k+1)
+                    );
+
             // using the node at cell's low corner as a stand-in for the whole cell's density
             // averaging the surrounding nodes would be more accurate
-            if (std::abs(rho_arr(i,j,k)) > threshold) {
+            if (std::abs(rho_cc) > threshold) {
                 tag_arr(i,j,k) = amrex::TagBox::SET;
             }
         });
@@ -157,7 +199,7 @@ GravityPICAmr::AllocLevelData (int lev, const amrex::BoxArray& ba,
 
 // make a new level where there was none
 void
-GravityPICAmr::MakeNewLevelFromScratch (int lev, amrex::Real /*time*/,
+GravityPICAmr::MakeNewLevelFromScratch (int lev, amrex::Real time,
                                          const amrex::BoxArray& ba,
                                          const amrex::DistributionMapping& dm)
 {
@@ -170,7 +212,6 @@ GravityPICAmr::MakeNewLevelFromScratch (int lev, amrex::Real /*time*/,
     SetDistributionMap(lev, dm);
     AllocLevelData(lev, ba, dm);
     
-    RebuildMasks();
 }
 
 // make a new level where there was none -- this is the same as from scratch because 
@@ -190,7 +231,6 @@ GravityPICAmr::MakeNewLevelFromCoarse (int lev, amrex::Real /*time*/,
     SetDistributionMap(lev, dm);
     AllocLevelData(lev, ba, dm);
 
-    RebuildMasks();
 }
 
 // change the shape of a n existing level's BoxArray/DistributionMapping 
@@ -204,7 +244,6 @@ GravityPICAmr::RemakeLevel (int lev, amrex::Real /*time*/,
     SetDistributionMap(lev, dm);
     AllocLevelData(lev, ba, dm);
 
-    RebuildMasks();
 }
 
 void

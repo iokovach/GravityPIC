@@ -167,6 +167,10 @@ tmp_build_dir/o/3d.gnu.EXE/ElectrostaticParticleContainer.o: \
  /projects/illinois/eng/physics/sheltonj/amrex/Src/Particle/AMReX_ParticleIO.H \
  /projects/illinois/eng/physics/sheltonj/amrex/Src/Particle/AMReX_ParticleHeader.H \
  /projects/illinois/eng/physics/sheltonj/amrex/Src/Particle/AMReX_WriteBinaryParticleData.H \
+ /projects/illinois/eng/physics/sheltonj/amrex/Src/AmrCore/AMReX_AmrCore.H \
+ /projects/illinois/eng/physics/sheltonj/amrex/Src/AmrCore/AMReX_AmrMesh.H \
+ /projects/illinois/eng/physics/sheltonj/amrex/Src/AmrCore/AMReX_TagBox.H \
+ /projects/illinois/eng/physics/sheltonj/amrex/Src/AmrCore/AMReX_AmrParGDB.H \
  src/PhysConst.H src/particles/pusher/ParticlePusher_K.H \
  src/particles/field_gather/FieldGather_K.H \
  src/particles/deposition/ChargeDeposition_K.H
@@ -337,6 +341,10 @@ src/particles/ElectrostaticParticleContainer.H:
 /projects/illinois/eng/physics/sheltonj/amrex/Src/Particle/AMReX_ParticleIO.H:
 /projects/illinois/eng/physics/sheltonj/amrex/Src/Particle/AMReX_ParticleHeader.H:
 /projects/illinois/eng/physics/sheltonj/amrex/Src/Particle/AMReX_WriteBinaryParticleData.H:
+/projects/illinois/eng/physics/sheltonj/amrex/Src/AmrCore/AMReX_AmrCore.H:
+/projects/illinois/eng/physics/sheltonj/amrex/Src/AmrCore/AMReX_AmrMesh.H:
+/projects/illinois/eng/physics/sheltonj/amrex/Src/AmrCore/AMReX_TagBox.H:
+/projects/illinois/eng/physics/sheltonj/amrex/Src/AmrCore/AMReX_AmrParGDB.H:
 src/PhysConst.H:
 src/particles/pusher/ParticlePusher_K.H:
 src/particles/field_gather/FieldGather_K.H:

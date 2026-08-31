@@ -77,6 +77,7 @@ ElectrostaticParticleContainer::DepositCharge (const Vector<MultiFab*>& rho) {
     // Each AMR level deposits its own particles onto its own rho MultiFab
     const int ng = rho[0]->nGrow();
     for (int lev = 0; lev < num_levels; ++lev) {
+        
         rho[lev]->setVal(0.0, ng);
         const auto& gm = m_gdb->Geom(lev);
         auto plo = gm.ProbLoArray();

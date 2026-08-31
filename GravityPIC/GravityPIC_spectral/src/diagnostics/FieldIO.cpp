@@ -65,6 +65,6 @@ void WritePlotFile (const Vector<const MultiFab*>& rhs,
     const std::string& pltfile = amrex::Concatenate("plt", nstep, 5);
     WriteMultiLevelPlotfile(pltfile, output_levs, GetVecOfConstPtrs(output_cc),
                             varnames, geom, 0.0, level_steps, outputRR);
-
+ 
     pc.Checkpoint(pltfile, "particle0", true, particle_varnames);
 }

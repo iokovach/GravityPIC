@@ -4,6 +4,8 @@
 #include <AMReX_MultiFab.H>
 #include <AMReX_MultiFabUtil.H>
 #include <AMReX_Particles.H>
+#include <AMReX_AmrCore.H>
+#include <AMReX_AmrParGDB.H>
 
 #include "PhysConst.H"
 
@@ -46,12 +48,10 @@ class ElectrostaticParticleContainer
     : public amrex::ParticleContainer<0, 0, PIdx::nattribs>
 {
 public:
-
-    ElectrostaticParticleContainer (const amrex::Vector<amrex::Geometry>            & geom,
-                                    const amrex::Vector<amrex::DistributionMapping> & dmap,
-                                    const amrex::Vector<amrex::BoxArray>            & ba,
-                                    const amrex::Vector<amrex::IntVect>             & rr)
-    : amrex::ParticleContainer<0, 0, PIdx::nattribs> (geom, dmap, ba, rr)
+    // build the particle container from an amr core object dynamically linked
+    // to a ParGDB which reads the live state of AMR core -- how many levels etc
+    ElectrostaticParticleContainer (amrex::AmrCore* amr_core)
+    : amrex::ParticleContainer<0, 0, PIdx::nattribs> (amr_core->GetParGDB())
         {
             amrex::ParmParse pp("particles");
             mass = 1.0;  // default

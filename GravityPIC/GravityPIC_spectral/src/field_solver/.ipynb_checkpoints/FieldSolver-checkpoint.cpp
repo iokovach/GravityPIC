@@ -68,7 +68,7 @@ void computePhi (const Vector<const MultiFab*>& rhs,
     }
 
     IntVect ratio(AMREX_D_DECL(2, 2, 2));
-    fixRHSForSolve(GetVecOfPtrs(tmp_rhs), masks, geom, ratio);
+    //fixRHSForSolve(GetVecOfPtrs(tmp_rhs), masks, geom, ratio);
 
     int verbose = 2;
     // may need to toggle this or toggle number of iterations to reach tol
