@@ -14,9 +14,9 @@ seed = 12345
 lo = np.array([0.0, 0.0, 0.0])
 hi = np.array([1.0, 1.0, 1.0])
 
-mass_weight = 1.0  # per-particle weight (w column)
+mass_weight = 1e-3  # per-particle weight (w column)
 
-out_file = "output/random1000_ics.txt"
+out_file = "output_rand_lev1/random1000_ics.txt"
 # ---------------------------------------------------------------------------
 
 rng = np.random.default_rng(seed)

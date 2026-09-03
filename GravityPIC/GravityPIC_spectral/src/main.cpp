@@ -35,10 +35,11 @@ void run_espic ()
     //             - sizes multilevel arrays and data structures
     GravityPICAmr GravityPICAmr;
     
-    // initialize AMR data
+    // initialize BoxArray, Geom and DM, as well as particle container linked to these
+    // populate particle container from IC file
     GravityPICAmr.InitData();
     
-    // advance solution to final time
+    // Phi Solve -> move parts -> regrid
     GravityPICAmr.Evolve();
     
     // wallclock time

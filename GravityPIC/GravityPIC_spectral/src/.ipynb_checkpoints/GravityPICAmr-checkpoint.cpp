@@ -22,6 +22,7 @@ GravityPICAmr::GravityPICAmr()
     pp.query("plot_int", plot_int);
     pp.query("particle_output_int", particle_output_int);
 
+    // get bc as an int for phi solver
     bc = pdc[0];
 
 }
@@ -36,7 +37,7 @@ GravityPICAmr::InitData()
     // mask out coarse and fine regions for field gathering later
     RebuildMasks();
 
-    // link PC to GravityPICAmr object
+    // link PC to GravityPICAmr object instead of just box arrays/geom etc at step 0
     myPC = std::make_unique<ElectrostaticParticleContainer>(this);
     
     // read particle data and put them in the container
@@ -83,7 +84,7 @@ GravityPICAmr::Evolve()
         // subtract off the mean to enforce -- use sum_uniqe since this is nodal
         // Domain gives us the region as a cell-centered box 
         // so it does not overcount nodes lying between mpi ranks or at periodic bdy
-        amrex::Real mean_rho = rhs[0]->sum_unique(0, false, geom[0].periodicity()) / geom[0].Domain().numPts();  
+       // amrex::Real mean_rho = rhs[0]->sum_unique(0, false, geom[0].periodicity()) / geom[0].Domain().numPts();  
         
         //rhs[0]->plus(-mean_rho, 0, 1);
 
@@ -110,6 +111,7 @@ GravityPICAmr::Evolve()
             WritePlotFile(GetVecOfConstPtrs(rhs), GetVecOfConstPtrs(phi), GetVecOfArrOfConstPtrs(eField), *myPC, geom, step);
         }
 
+        // move particles
         myPC->Evolve(GetVecOfArrOfConstPtrs(eField), GetVecOfConstPtrs(rhs), dt);
 
         // regrid after evolving and before calling redistribute
@@ -135,16 +137,6 @@ GravityPICAmr::ErrorEst (int lev, amrex::TagBoxArray& tags,
                    << ", time = " << time << "\n";
 
     const amrex::MultiFab& rho = *rhs[lev];
-    // Create cell-centered MultiFab
-    //amrex::BoxArray cc_ba = rho.boxArray();
-    //cc_ba.convert(amrex::IndexType::TheCellType());
-
-    //amrex::MultiFab rho_cc(cc_ba, rho.DistributionMap(), 1, 0);
-    
-    //amrex::average_node_to_cellcenter(rho_cc, 0, rho, 0, 1);
-
-    //amrex::Print() << "rho_err = " << rho_err << "\n";
-    //amrex::Print() << "max |rho_cc| = " << rho_cc.norm0(0) << "\n";
 
     for (amrex::MFIter mfi(rho, amrex::TilingIfNotGPU()); mfi.isValid(); ++mfi) {
         amrex::Box bx = mfi.tilebox();

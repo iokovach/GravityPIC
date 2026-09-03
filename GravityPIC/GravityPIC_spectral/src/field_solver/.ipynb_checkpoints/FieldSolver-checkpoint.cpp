@@ -68,7 +68,8 @@ void computePhi (const Vector<const MultiFab*>& rhs,
     }
 
     IntVect ratio(AMREX_D_DECL(2, 2, 2));
-    //fixRHSForSolve(GetVecOfPtrs(tmp_rhs), masks, geom, ratio);
+    // zero out fine boundary -- those values will be populated by the coarse values
+    fixRHSForSolve(GetVecOfPtrs(tmp_rhs), masks, geom, ratio);
 
     int verbose = 2;
     // may need to toggle this or toggle number of iterations to reach tol
@@ -120,7 +121,7 @@ void computePhi (const Vector<const MultiFab*>& rhs,
             }
             }
         else
-            {
+            { // finite diff for higher levels
             // set up the discretized Laplacian operator on this level's grid
             MLNodeLaplacian linop(level_geom, level_grids, level_dm);
     
@@ -225,7 +226,7 @@ void zeroOutBoundary (MultiFab& input_data,
     bndry_data.FillBoundary();
 }
 
-// identify where coarse/fine boundary handling needed
+// flag cells close to a coarse/fine boundary 
 Vector<std::unique_ptr<iMultiFab> > getLevelMasks
                    (const Vector<BoxArray>& grids,
                     const Vector<DistributionMapping>& dmap,
@@ -293,10 +294,7 @@ void computeE (const Vector<std::array<MultiFab*, AMREX_SPACEDIM> >& E,
                                    });
         }
 
-        // FIX: added the FillBoundary call for Ez, matching Ex/Ey -- without
-        // this, Ez's ghost cells would never be synced across grid boxes,
-        // and field-gather near a box boundary would read stale/uninitialized
-        // z-field data.
+        // what does this do?
         E[lev][0]->FillBoundary(gm.periodicity());
         E[lev][1]->FillBoundary(gm.periodicity());
         E[lev][2]->FillBoundary(gm.periodicity());

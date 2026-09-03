@@ -10,7 +10,7 @@ IntType = np.int32
 R = 1
 N = 1000
 Mtot = 1
-out_file = "output/sphere1000_ics.txt"
+out_file = "output_sphere_lev1/sphere1000_ics.txt"
 
 #position of center of box
 centerx = 2

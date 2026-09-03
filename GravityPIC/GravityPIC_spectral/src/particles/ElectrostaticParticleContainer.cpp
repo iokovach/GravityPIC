@@ -66,7 +66,6 @@ void ElectrostaticParticleContainer::InitParticles (const std::string& filename)
     Redistribute();
 }
 
-
 // call deposit_cic correctly for AMR
 void
 ElectrostaticParticleContainer::DepositCharge (const Vector<MultiFab*>& rho) {
@@ -92,6 +91,7 @@ ElectrostaticParticleContainer::DepositCharge (const Vector<MultiFab*>& rho) {
             auto rhoarr = (*rho[lev])[pti].array();
             const auto wp_ptr = wp.data();
             const auto p_ptr = particles().data();
+            
             // ParallelFor launches one "thread" per particle (on GPU) or loops serially (on CPU) 
             // each iteration deposits one particle's mass onto the surrounding mesh nodes of rhoarr
             amrex::ParallelFor(np, [=] AMREX_GPU_DEVICE (int i) noexcept {
@@ -105,12 +105,13 @@ ElectrostaticParticleContainer::DepositCharge (const Vector<MultiFab*>& rho) {
 
     // For AMR runs with multiple levels, the fine level's mass density also
     // needs to be averaged down onto the coarse level's density for the coarse level Poisson solve
+    // otherwise you will solve for level 0 with a hole where there is refinement 
     for (int lev = finest_level - 1; lev >= 0; --lev) {
         FieldSolver::sumFineToCrseNodal(*rho[lev+1], *rho[lev], m_gdb->Geom(lev), m_gdb->refRatio(lev));
     }
 
     // Rescale the deposited mass density by 4piG 
-    // (grad^2 phi = 4piG*rho 
+    // which I have set to 1
     for (int lev = 0; lev < num_levels; ++lev) {
         rho[lev]->mult(PhysConst::FourPiG, ng);
     }
@@ -156,7 +157,7 @@ FieldGather (const Vector<std::array<const MultiFab*, AMREX_SPACEDIM> >& E,
         return;
     }
 
-    // Multi-level (AMR) case below: build a coarse copy of the fine-level field so 
+    // Multi-level (AMR) case : build a coarse copy of the fine-level field so 
     // particles near the coarse/fine boundary can fall back to it
     const BoxArray& fine_BA = E[1][0]->boxArray();
     const DistributionMapping& fine_dm = E[1][0]->DistributionMap();

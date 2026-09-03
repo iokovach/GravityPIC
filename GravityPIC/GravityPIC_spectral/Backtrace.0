@@ -1,0 +1,50 @@
+Host Name: ccc0356.campuscluster.illinois.edu
+=== If no file names and line numbers are shown below, one can run
+            addr2line -Cpfie my_exefile my_line_address
+    to convert `my_line_address` (e.g., 0x4a6b) into file name and line number.
+    Or one can use amrex/Tools/Backtrace/parse_bt.py.
+
+=== Please note that the line number reported by addr2line may not be accurate.
+    One can use
+            readelf -wl my_exefile | grep my_line_address'
+    to find out the offset for that line.
+
+ 0: /projects/illinois/eng/physics/sheltonj/amrex/GravityPIC/GravityPIC_spectral/main3d.gnu.ex() [0x6304b6]
+    amrex::BLBackTrace::print_backtrace_info(_IO_FILE*)
+/projects/illinois/eng/physics/sheltonj/amrex/Src/Base/AMReX_BLBackTrace.cpp:215:36
+
+ 1: /projects/illinois/eng/physics/sheltonj/amrex/GravityPIC/GravityPIC_spectral/main3d.gnu.ex() [0x633834]
+    amrex::BLBackTrace::handler(int)
+/projects/illinois/eng/physics/sheltonj/amrex/Src/Base/AMReX_BLBackTrace.cpp:103:15
+
+ 2: /projects/illinois/eng/physics/sheltonj/amrex/GravityPIC/GravityPIC_spectral/main3d.gnu.ex() [0x496e5a]
+    std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_data() const inlined at /usr/include/c++/11/bits/basic_string.h:230:23 in ElectrostaticParticleContainer::InitParticles(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)
+/usr/include/c++/11/bits/basic_string.h:195:28
+std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_is_local() const
+/usr/include/c++/11/bits/basic_string.h:230:23
+std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()
+/usr/include/c++/11/bits/basic_string.h:239:18
+std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::~basic_string()
+/usr/include/c++/11/bits/basic_string.h:672:19
+ElectrostaticParticleContainer::InitParticles(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)
+/projects/illinois/eng/physics/sheltonj/amrex/GravityPIC/GravityPIC_spectral/./src/particles/ElectrostaticParticleContainer.cpp:21:84
+
+ 3: /projects/illinois/eng/physics/sheltonj/amrex/GravityPIC/GravityPIC_spectral/main3d.gnu.ex() [0x4346a0]
+    GravityPICAmr::InitData()
+/projects/illinois/eng/physics/sheltonj/amrex/GravityPIC/GravityPIC_spectral/./src/GravityPICAmr.cpp:46:12
+
+ 4: /projects/illinois/eng/physics/sheltonj/amrex/GravityPIC/GravityPIC_spectral/main3d.gnu.ex() [0x426175]
+    run_espic()
+/projects/illinois/eng/physics/sheltonj/amrex/GravityPIC/GravityPIC_spectral/./src/main.cpp:43:25
+
+ 5: /projects/illinois/eng/physics/sheltonj/amrex/GravityPIC/GravityPIC_spectral/main3d.gnu.ex() [0x42008f]
+    main
+/projects/illinois/eng/physics/sheltonj/amrex/GravityPIC/GravityPIC_spectral/./src/main.cpp:23:20
+
+ 6: /lib64/libc.so.6(+0x2a610) [0x7f9ed59c1610]
+
+ 7: /lib64/libc.so.6(__libc_start_main+0x80) [0x7f9ed59c16c0]
+
+ 8: /projects/illinois/eng/physics/sheltonj/amrex/GravityPIC/GravityPIC_spectral/main3d.gnu.ex() [0x423f45]
+    _start at ??:?
+

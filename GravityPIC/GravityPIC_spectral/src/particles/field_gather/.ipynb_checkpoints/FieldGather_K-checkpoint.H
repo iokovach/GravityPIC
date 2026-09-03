@@ -77,7 +77,7 @@ void interpolate_cic (P const& p, amrex::Real& Ex_p, amrex::Real& Ey_p, amrex::R
 }
 
 // interpolator for the case where we have a coarse grid and a finer grid
-// for another day -- if i need more than 2 grid widths then i might need to mod this
+// for another day -- if i need more than 2 grids then i might need to mod this
 template <typename P>
 AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE
 void interpolate_cic_two_levels (P const& p, amrex::Real& Ex_p, amrex::Real& Ey_p, amrex::Real& Ez_p,
